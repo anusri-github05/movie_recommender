@@ -35,20 +35,40 @@ if st.button("Recommend Movies"):
             .head(5)
         )
 
-            if not top_movies.empty:
-            st.subheader("📽 Recommended Movies:")
-            for _, row in top_movies.iterrows():
-                st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
-        else:
-            st.warning("No personalized recommendations found for this user. Showing top-rated movies instead.")
-            fallback = (
-                df.groupby('movieId')
-                  .agg({'rating': 'mean', 'title': 'first'})
-                  .sort_values('rating', ascending=False)
-                  .head(5)
-            )
-            for _, row in fallback.iterrows():
-                st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
+            if st.button("Recommend Movies"):
+        try:
+            # Find movies rated by the user
+            user_ratings = df[df['userId'] == user_id]
 
+            # Find other users who rated the same movies
+            similar_users = df[df['movieId'].isin(user_ratings['movieId']) & (df['userId'] != user_id)]
+
+            # Recommend movies similar users liked that this user hasn't seen
+            top_movies = (
+                similar_users[~similar_users['movieId'].isin(user_ratings['movieId'])]
+                .groupby('movieId')
+                .agg({'rating': 'mean', 'title': 'first'})
+                .sort_values('rating', ascending=False)
+                .head(5)
+            )
+
+            # ✅ Always show something:
+            if not top_movies.empty:
+                st.subheader("📽 Recommended Movies:")
+                for _, row in top_movies.iterrows():
+                    st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
+            else:
+                st.warning("No personalized recommendations found for this user. Showing top-rated movies instead.")
+                fallback = (
+                    df.groupby('movieId')
+                      .agg({'rating': 'mean', 'title': 'first'})
+                      .sort_values('rating', ascending=False)
+                      .head(5)
+                )
+                for _, row in fallback.iterrows():
+                    st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
+
+        except Exception as e:
+            st.error(f"Something went wrong: {e}")
     except Exception as e:
         st.error(f"Something went wrong: {e}")
