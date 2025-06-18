@@ -35,7 +35,7 @@ if st.button("Recommend Movies"):
             .head(5)
         )
 
-               if not top_movies.empty:
+            if not top_movies.empty:
             st.subheader("📽 Recommended Movies:")
             for _, row in top_movies.iterrows():
                 st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
