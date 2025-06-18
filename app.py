@@ -11,45 +11,34 @@ def load_data():
 
 df, movies = load_data()
 
-# App UI
 st.title("🎬 Simple Movie Recommender")
-st.markdown("Enter a user ID (1 to 943) to get recommendations based on similar users.")
+st.markdown("Enter a user ID (1 to 943) to get recommendations based on unrated top movies.")
 
 user_id = st.number_input("Enter User ID:", min_value=1, max_value=943, step=1)
 
-# Recommendation logic
 if st.button("Recommend Movies"):
     try:
-        # Movies already rated by user
-        user_ratings = df[df['userId'] == user_id]
+        # Movies rated by the user
+        user_rated = df[df['userId'] == user_id]['movieId'].unique()
 
-        # Find other users who rated the same movies
-        similar_users = df[df['movieId'].isin(user_ratings['movieId']) & (df['userId'] != user_id)]
+        # Movies not rated by the user
+        unrated_movies = df[~df['movieId'].isin(user_rated)]
 
-        # Recommend movies similar users liked that this user hasn't rated
-        top_movies = (
-            similar_users[~similar_users['movieId'].isin(user_ratings['movieId'])]
+        # Average ratings for those movies
+        top_unrated = (
+            unrated_movies
             .groupby('movieId')
             .agg({'rating': 'mean', 'title': 'first'})
             .sort_values('rating', ascending=False)
             .head(5)
         )
 
-        # Display results
-        if not top_movies.empty:
+        if not top_unrated.empty:
             st.subheader("📽 Recommended Movies:")
-            for _, row in top_movies.iterrows():
+            for _, row in top_unrated.iterrows():
                 st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
         else:
-            st.warning("No personalized recommendations found for this user. Showing top-rated movies instead.")
-            fallback = (
-                df.groupby('movieId')
-                  .agg({'rating': 'mean', 'title': 'first'})
-                  .sort_values('rating', ascending=False)
-                  .head(5)
-            )
-            for _, row in fallback.iterrows():
-                st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
+            st.error("Could not find unrated movies for this user.")
 
     except Exception as e:
         st.error(f"Something went wrong: {e}")
