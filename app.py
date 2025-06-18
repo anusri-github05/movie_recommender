@@ -35,9 +35,20 @@ if st.button("Recommend Movies"):
             .head(5)
         )
 
-        st.subheader("📽 Recommended Movies:")
-        for _, row in top_movies.iterrows():
-            st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
+               if not top_movies.empty:
+            st.subheader("📽 Recommended Movies:")
+            for _, row in top_movies.iterrows():
+                st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
+        else:
+            st.warning("No personalized recommendations found for this user. Showing top-rated movies instead.")
+            fallback = (
+                df.groupby('movieId')
+                  .agg({'rating': 'mean', 'title': 'first'})
+                  .sort_values('rating', ascending=False)
+                  .head(5)
+            )
+            for _, row in fallback.iterrows():
+                st.write(f"🎬 **{row['title']}** — Avg Rating: {row['rating']:.2f}")
 
     except Exception as e:
         st.error(f"Something went wrong: {e}")
